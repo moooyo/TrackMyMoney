@@ -1,0 +1,25 @@
+server:
+  port: "8080"
+  mode: "debug" # debug, release, test
+
+database:
+  driver: "sqlite"
+  dsn: "./data/trackmymoney.db"
+
+auth:
+  username: "admin"
+  password: "admin"
+  jwt_secret: "your-secret-key-change-this-in-production"
+
+log:
+  level: "debug" # debug, info, warn, error
+  output_file: "./logs/app.log"
+  max_size: 10 # MB
+  max_backups: 5
+  max_age: 30 # days
+
+market:
+  base_url: "http://localhost:5000" # Python Market service URL
+  ws_url: "ws://localhost:5000" # WebSocket URL for real-time market data
+  timeout: 30 # Request timeout in seconds
+  max_retries: 3 # Maximum number of retries

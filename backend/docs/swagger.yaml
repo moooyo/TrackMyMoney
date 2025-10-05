@@ -1,0 +1,2049 @@
+basePath: /api
+definitions:
+  handlers.AssetHistory:
+    properties:
+      categories:
+        additionalProperties:
+          type: number
+        type: object
+      date:
+        type: string
+      net_assets:
+        type: number
+      total_assets:
+        type: number
+      total_debt:
+        type: number
+    type: object
+  handlers.AssetsSummary:
+    properties:
+      categories:
+        additionalProperties:
+          type: number
+        type: object
+      net_assets:
+        type: number
+      total_assets:
+        type: number
+      total_debt:
+        type: number
+    type: object
+  handlers.CreateAccountRequest:
+    properties:
+      account_date:
+        type: string
+      crypto_amount:
+        type: number
+      crypto_symbol:
+        type: string
+      currency:
+        type: string
+      current_amount:
+        type: number
+      description:
+        type: string
+      expected_annual_rate:
+        type: number
+      initial_amount:
+        type: number
+      name:
+        type: string
+      shares:
+        type: number
+      symbol:
+        type: string
+      type:
+        $ref: '#/definitions/models.AccountType'
+    required:
+    - current_amount
+    - initial_amount
+    - name
+    - type
+    type: object
+  handlers.CreateCashAssetRequest:
+    properties:
+      amount:
+        type: number
+      currency:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - amount
+    - name
+    type: object
+  handlers.CreateCryptoAssetRequest:
+    properties:
+      current_price:
+        type: number
+      description:
+        type: string
+      name:
+        type: string
+      purchase_price:
+        type: number
+      quantity:
+        type: number
+      symbol:
+        description: e.g., BTC, ETH
+        type: string
+    required:
+    - name
+    - purchase_price
+    - quantity
+    - symbol
+    type: object
+  handlers.CreateDebtAssetRequest:
+    properties:
+      amount:
+        description: Negative value for liabilities
+        type: number
+      creditor:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+      interest_rate:
+        type: number
+      name:
+        type: string
+    required:
+    - amount
+    - creditor
+    - name
+    type: object
+  handlers.CreateInterestBearingAssetRequest:
+    properties:
+      amount:
+        type: number
+      currency:
+        type: string
+      description:
+        type: string
+      interest_rate:
+        description: Annual interest rate in percentage
+        type: number
+      maturity_date:
+        type: string
+      name:
+        type: string
+      start_date:
+        type: string
+    required:
+    - amount
+    - interest_rate
+    - name
+    - start_date
+    type: object
+  handlers.CreateNotificationRequest:
+    properties:
+      channel:
+        $ref: '#/definitions/models.NotificationChannel'
+      config:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      name:
+        type: string
+      schedule:
+        type: string
+    required:
+    - channel
+    - config
+    - name
+    type: object
+  handlers.CreateStockAssetRequest:
+    properties:
+      broker_account:
+        type: string
+      currency:
+        type: string
+      current_price:
+        type: number
+      description:
+        type: string
+      name:
+        type: string
+      purchase_price:
+        type: number
+      quantity:
+        type: number
+      symbol:
+        type: string
+    required:
+    - broker_account
+    - name
+    - purchase_price
+    - quantity
+    - symbol
+    type: object
+  handlers.CreateWatchlistRequest:
+    properties:
+      asset_type:
+        type: string
+      name:
+        type: string
+      notes:
+        type: string
+      symbol:
+        type: string
+    required:
+    - asset_type
+    - name
+    - symbol
+    type: object
+  handlers.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  handlers.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/handlers.User'
+    type: object
+  handlers.RefreshPricesResponse:
+    properties:
+      failed:
+        items:
+          type: string
+        type: array
+      message:
+        type: string
+      updated:
+        type: integer
+    type: object
+  handlers.UpdateAccountRequest:
+    properties:
+      crypto_amount:
+        type: number
+      crypto_symbol:
+        type: string
+      currency:
+        type: string
+      current_amount:
+        type: number
+      description:
+        type: string
+      expected_annual_rate:
+        type: number
+      name:
+        type: string
+      shares:
+        type: number
+      symbol:
+        type: string
+      type:
+        $ref: '#/definitions/models.AccountType'
+    type: object
+  handlers.UpdateCashAssetRequest:
+    properties:
+      amount:
+        type: number
+      currency:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  handlers.UpdateCryptoAssetRequest:
+    properties:
+      current_price:
+        type: number
+      description:
+        type: string
+      name:
+        type: string
+      purchase_price:
+        type: number
+      quantity:
+        type: number
+      symbol:
+        type: string
+    type: object
+  handlers.UpdateDebtAssetRequest:
+    properties:
+      amount:
+        type: number
+      creditor:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+      interest_rate:
+        type: number
+      name:
+        type: string
+    type: object
+  handlers.UpdateInterestBearingAssetRequest:
+    properties:
+      amount:
+        type: number
+      currency:
+        type: string
+      description:
+        type: string
+      interest_rate:
+        type: number
+      maturity_date:
+        type: string
+      name:
+        type: string
+      start_date:
+        type: string
+    type: object
+  handlers.UpdateNotificationRequest:
+    properties:
+      channel:
+        $ref: '#/definitions/models.NotificationChannel'
+      config:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      name:
+        type: string
+      schedule:
+        type: string
+    type: object
+  handlers.UpdateStockAssetRequest:
+    properties:
+      broker_account:
+        type: string
+      currency:
+        type: string
+      current_price:
+        type: number
+      description:
+        type: string
+      name:
+        type: string
+      purchase_price:
+        type: number
+      quantity:
+        type: number
+      symbol:
+        type: string
+    type: object
+  handlers.UpdateWatchlistRequest:
+    properties:
+      notes:
+        type: string
+    type: object
+  handlers.User:
+    properties:
+      username:
+        type: string
+    type: object
+  models.Account:
+    properties:
+      account_date:
+        type: string
+      created_at:
+        type: string
+      crypto_amount:
+        type: number
+      crypto_symbol:
+        description: For crypto
+        type: string
+      currency:
+        type: string
+      current_amount:
+        type: number
+      description:
+        type: string
+      expected_annual_rate:
+        description: For interest-bearing cash
+        type: number
+      id:
+        type: integer
+      initial_amount:
+        type: number
+      name:
+        type: string
+      shares:
+        type: number
+      symbol:
+        description: For stocks/ETFs
+        type: string
+      type:
+        $ref: '#/definitions/models.AccountType'
+      updated_at:
+        type: string
+    type: object
+  models.AccountType:
+    enum:
+    - cash
+    - interest_bearing_cash
+    - stock
+    - debt
+    - crypto
+    type: string
+    x-enum-varnames:
+    - AccountTypeCash
+    - AccountTypeInterestBearingCash
+    - AccountTypeStock
+    - AccountTypeDebt
+    - AccountTypeCrypto
+  models.CashAsset:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.CryptoAsset:
+    properties:
+      created_at:
+        type: string
+      current_price:
+        description: Can be updated from market API
+        type: number
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      purchase_price:
+        description: Average purchase price
+        type: number
+      quantity:
+        type: number
+      symbol:
+        description: e.g., BTC, ETH
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.DebtAsset:
+    properties:
+      amount:
+        description: Negative value for liabilities
+        type: number
+      created_at:
+        type: string
+      creditor:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+      id:
+        type: integer
+      interest_rate:
+        type: number
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.HistoryDataPoint:
+    properties:
+      close:
+        type: number
+      date:
+        type: string
+      high:
+        type: number
+      low:
+        type: number
+      open:
+        type: number
+      timestamp:
+        description: Unix timestamp in milliseconds
+        type: integer
+      volume:
+        type: integer
+    type: object
+  models.HistoryResponse:
+    properties:
+      currency:
+        type: string
+      data_points:
+        items:
+          $ref: '#/definitions/models.HistoryDataPoint'
+        type: array
+      interval:
+        type: string
+      period:
+        type: string
+      symbol:
+        type: string
+    type: object
+  models.InfoResponse:
+    properties:
+      country:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      industry:
+        type: string
+      market_cap:
+        type: integer
+      name:
+        type: string
+      sector:
+        type: string
+      symbol:
+        type: string
+      website:
+        type: string
+    type: object
+  models.InterestBearingAsset:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      interest_rate:
+        description: Annual interest rate in percentage
+        type: number
+      maturity_date:
+        type: string
+      name:
+        type: string
+      start_date:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Notification:
+    properties:
+      channel:
+        $ref: '#/definitions/models.NotificationChannel'
+      config:
+        description: JSON string of channel config
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: integer
+      name:
+        type: string
+      schedule:
+        description: Cron expression
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.NotificationChannel:
+    enum:
+    - bark
+    - telegram_bot
+    - email
+    type: string
+    x-enum-varnames:
+    - ChannelBark
+    - ChannelTelegramBot
+    - ChannelEmail
+  models.Quote:
+    properties:
+      change:
+        type: number
+      change_percent:
+        type: number
+      currency:
+        type: string
+      market_cap:
+        type: integer
+      name:
+        type: string
+      previous_close:
+        type: number
+      price:
+        type: number
+      symbol:
+        type: string
+      timestamp:
+        type: integer
+      volume:
+        type: integer
+    type: object
+  models.QuotesRequest:
+    properties:
+      symbols:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - symbols
+    type: object
+  models.QuotesResponse:
+    properties:
+      failed_symbols:
+        items:
+          type: string
+        type: array
+      quotes:
+        items:
+          $ref: '#/definitions/models.Quote'
+        type: array
+      success_count:
+        type: integer
+    type: object
+  models.SearchResponse:
+    properties:
+      count:
+        type: integer
+      query:
+        type: string
+      results:
+        items:
+          $ref: '#/definitions/models.SearchResult'
+        type: array
+    type: object
+  models.SearchResult:
+    properties:
+      asset_type:
+        type: string
+      exchange:
+        type: string
+      name:
+        type: string
+      symbol:
+        type: string
+    type: object
+  models.StockAsset:
+    properties:
+      broker_account:
+        type: string
+      created_at:
+        type: string
+      currency:
+        type: string
+      current_price:
+        description: Can be updated from market API
+        type: number
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      purchase_price:
+        description: Average purchase price
+        type: number
+      quantity:
+        type: number
+      symbol:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Watchlist:
+    properties:
+      asset_type:
+        description: '"stock", "etf", "crypto"'
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      notes:
+        type: string
+      symbol:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  response.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: 资金收益追踪系统 API 文档
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: TrackMyMoney API
+  version: "1.0"
+paths:
+  /api/accounts:
+    get:
+      description: Get all financial accounts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Account'
+                  type: array
+              type: object
+      summary: List accounts
+      tags:
+      - accounts
+    post:
+      consumes:
+      - application/json
+      description: Create a new financial account
+      parameters:
+      - description: Account info
+        in: body
+        name: account
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Account'
+              type: object
+      summary: Create account
+      tags:
+      - accounts
+  /api/accounts/{id}:
+    delete:
+      description: Delete a financial account
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Delete account
+      tags:
+      - accounts
+    get:
+      description: Get a financial account by ID
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Account'
+              type: object
+      summary: Get account
+      tags:
+      - accounts
+    put:
+      consumes:
+      - application/json
+      description: Update a financial account
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Account info
+        in: body
+        name: account
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Account'
+              type: object
+      summary: Update account
+      tags:
+      - accounts
+  /api/assets/cash:
+    get:
+      description: Get all cash assets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.CashAsset'
+                  type: array
+              type: object
+      summary: List cash assets
+      tags:
+      - assets
+    post:
+      consumes:
+      - application/json
+      description: Create a new cash asset
+      parameters:
+      - description: Cash asset info
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateCashAssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.CashAsset'
+              type: object
+      summary: Create cash asset
+      tags:
+      - assets
+  /api/assets/cash/{id}:
+    delete:
+      description: Delete a cash asset
+      parameters:
+      - description: Cash Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Delete cash asset
+      tags:
+      - assets
+    get:
+      description: Get a cash asset by ID
+      parameters:
+      - description: Cash Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.CashAsset'
+              type: object
+      summary: Get cash asset
+      tags:
+      - assets
+    put:
+      consumes:
+      - application/json
+      description: Update a cash asset
+      parameters:
+      - description: Cash Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Cash asset info
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateCashAssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.CashAsset'
+              type: object
+      summary: Update cash asset
+      tags:
+      - assets
+  /api/assets/crypto:
+    get:
+      description: Get all cryptocurrency assets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.CryptoAsset'
+                  type: array
+              type: object
+      summary: List crypto assets
+      tags:
+      - assets
+    post:
+      consumes:
+      - application/json
+      description: Create a new cryptocurrency asset
+      parameters:
+      - description: Crypto asset info
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateCryptoAssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.CryptoAsset'
+              type: object
+      summary: Create crypto asset
+      tags:
+      - assets
+  /api/assets/crypto/{id}:
+    delete:
+      description: Delete a cryptocurrency asset
+      parameters:
+      - description: Crypto Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Delete crypto asset
+      tags:
+      - assets
+    get:
+      description: Get a cryptocurrency asset by ID
+      parameters:
+      - description: Crypto Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.CryptoAsset'
+              type: object
+      summary: Get crypto asset
+      tags:
+      - assets
+    put:
+      consumes:
+      - application/json
+      description: Update a cryptocurrency asset
+      parameters:
+      - description: Crypto Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Crypto asset info
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateCryptoAssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.CryptoAsset'
+              type: object
+      summary: Update crypto asset
+      tags:
+      - assets
+  /api/assets/crypto/refresh-prices:
+    post:
+      description: Refresh current prices for all cryptocurrency assets from market
+        data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.RefreshPricesResponse'
+              type: object
+      summary: Refresh crypto prices
+      tags:
+      - assets
+  /api/assets/debt:
+    get:
+      description: Get all debt/liability assets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.DebtAsset'
+                  type: array
+              type: object
+      summary: List debt assets
+      tags:
+      - assets
+    post:
+      consumes:
+      - application/json
+      description: Create a new debt/liability asset
+      parameters:
+      - description: Debt asset info
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateDebtAssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DebtAsset'
+              type: object
+      summary: Create debt asset
+      tags:
+      - assets
+  /api/assets/debt/{id}:
+    delete:
+      description: Delete a debt/liability asset
+      parameters:
+      - description: Debt Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Delete debt asset
+      tags:
+      - assets
+    get:
+      description: Get a debt/liability asset by ID
+      parameters:
+      - description: Debt Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DebtAsset'
+              type: object
+      summary: Get debt asset
+      tags:
+      - assets
+    put:
+      consumes:
+      - application/json
+      description: Update a debt/liability asset
+      parameters:
+      - description: Debt Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Debt asset info
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateDebtAssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DebtAsset'
+              type: object
+      summary: Update debt asset
+      tags:
+      - assets
+  /api/assets/history:
+    get:
+      description: Get historical assets data
+      parameters:
+      - default: 30d
+        description: 'Time period: 7d, 30d, 90d, 1y'
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handlers.AssetHistory'
+                  type: array
+              type: object
+      summary: Get assets history
+      tags:
+      - assets
+  /api/assets/interest-bearing:
+    get:
+      description: Get all interest-bearing assets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.InterestBearingAsset'
+                  type: array
+              type: object
+      summary: List interest-bearing assets
+      tags:
+      - assets
+    post:
+      consumes:
+      - application/json
+      description: Create a new interest-bearing asset (time deposit, bond, etc.)
+      parameters:
+      - description: Interest-bearing asset info
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateInterestBearingAssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.InterestBearingAsset'
+              type: object
+      summary: Create interest-bearing asset
+      tags:
+      - assets
+  /api/assets/interest-bearing/{id}:
+    delete:
+      description: Delete an interest-bearing asset
+      parameters:
+      - description: Interest-Bearing Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Delete interest-bearing asset
+      tags:
+      - assets
+    get:
+      description: Get an interest-bearing asset by ID
+      parameters:
+      - description: Interest-Bearing Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.InterestBearingAsset'
+              type: object
+      summary: Get interest-bearing asset
+      tags:
+      - assets
+    put:
+      consumes:
+      - application/json
+      description: Update an interest-bearing asset
+      parameters:
+      - description: Interest-Bearing Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Interest-bearing asset info
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateInterestBearingAssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.InterestBearingAsset'
+              type: object
+      summary: Update interest-bearing asset
+      tags:
+      - assets
+  /api/assets/stock:
+    get:
+      description: Get all stock/ETF assets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.StockAsset'
+                  type: array
+              type: object
+      summary: List stock assets
+      tags:
+      - assets
+    post:
+      consumes:
+      - application/json
+      description: Create a new stock/ETF asset
+      parameters:
+      - description: Stock asset info
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateStockAssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.StockAsset'
+              type: object
+      summary: Create stock asset
+      tags:
+      - assets
+  /api/assets/stock/{id}:
+    delete:
+      description: Delete a stock/ETF asset
+      parameters:
+      - description: Stock Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Delete stock asset
+      tags:
+      - assets
+    get:
+      description: Get a stock/ETF asset by ID
+      parameters:
+      - description: Stock Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.StockAsset'
+              type: object
+      summary: Get stock asset
+      tags:
+      - assets
+    put:
+      consumes:
+      - application/json
+      description: Update a stock/ETF asset
+      parameters:
+      - description: Stock Asset ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Stock asset info
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateStockAssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.StockAsset'
+              type: object
+      summary: Update stock asset
+      tags:
+      - assets
+  /api/assets/stock/refresh-prices:
+    post:
+      description: Refresh current prices for all stock assets from market data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.RefreshPricesResponse'
+              type: object
+      summary: Refresh stock prices
+      tags:
+      - assets
+  /api/assets/summary:
+    get:
+      description: Get current assets summary including total assets, debt, and net
+        assets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.AssetsSummary'
+              type: object
+      summary: Get assets summary
+      tags:
+      - assets
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: User login
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.LoginResponse'
+              type: object
+      summary: Login
+      tags:
+      - auth
+  /api/auth/verify:
+    get:
+      description: Verify JWT token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.User'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Verify token
+      tags:
+      - auth
+  /api/notifications:
+    get:
+      description: Get all notification configurations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Notification'
+                  type: array
+              type: object
+      summary: List notifications
+      tags:
+      - notifications
+    post:
+      consumes:
+      - application/json
+      description: Create a new notification configuration
+      parameters:
+      - description: Notification info
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Notification'
+              type: object
+      summary: Create notification
+      tags:
+      - notifications
+  /api/notifications/{id}:
+    delete:
+      description: Delete a notification configuration
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Delete notification
+      tags:
+      - notifications
+    get:
+      description: Get a notification configuration by ID
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Notification'
+              type: object
+      summary: Get notification
+      tags:
+      - notifications
+    put:
+      consumes:
+      - application/json
+      description: Update a notification configuration
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Notification info
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Notification'
+              type: object
+      summary: Update notification
+      tags:
+      - notifications
+  /market/history/{symbol}:
+    get:
+      consumes:
+      - application/json
+      description: Get historical price data for a stock or crypto
+      parameters:
+      - description: Stock or crypto symbol
+        in: path
+        name: symbol
+        required: true
+        type: string
+      - default: 1mo
+        description: Time period (1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max)
+        in: query
+        name: period
+        type: string
+      - default: 1d
+        description: Data interval (1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk,
+          1mo, 3mo)
+        in: query
+        name: interval
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.HistoryResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get historical price data
+      tags:
+      - Market
+  /market/info/{symbol}:
+    get:
+      consumes:
+      - application/json
+      description: Get basic information about a stock or cryptocurrency
+      parameters:
+      - description: Stock or crypto symbol
+        in: path
+        name: symbol
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.InfoResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get stock/crypto information
+      tags:
+      - Market
+  /market/quote/{symbol}:
+    get:
+      consumes:
+      - application/json
+      description: Get real-time quote for a single stock or crypto symbol
+      parameters:
+      - description: Stock or crypto symbol (e.g., AAPL, BTC-USD)
+        in: path
+        name: symbol
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Quote'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get real-time quote
+      tags:
+      - Market
+  /market/quotes:
+    post:
+      consumes:
+      - application/json
+      description: Get quotes for multiple symbols at once
+      parameters:
+      - description: Request body with symbols array
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.QuotesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.QuotesResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get batch quotes
+      tags:
+      - Market
+  /market/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for stocks or cryptocurrencies by name or symbol
+      parameters:
+      - description: Search query
+        in: query
+        minLength: 1
+        name: q
+        required: true
+        type: string
+      - default: 10
+        description: Maximum number of results
+        in: query
+        maximum: 50
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.SearchResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Search stocks/crypto
+      tags:
+      - Market
+  /watchlist:
+    get:
+      consumes:
+      - application/json
+      description: Get all watchlist items for the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Watchlist'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get user's watchlist
+      tags:
+      - Watchlist
+    post:
+      consumes:
+      - application/json
+      description: Add a new stock or crypto to user's watchlist
+      parameters:
+      - description: Watchlist item
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateWatchlistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Watchlist'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Create watchlist item
+      tags:
+      - Watchlist
+  /watchlist/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a stock or crypto from user's watchlist
+      parameters:
+      - description: Watchlist ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Delete watchlist item
+      tags:
+      - Watchlist
+    get:
+      consumes:
+      - application/json
+      description: Get a specific watchlist item by ID
+      parameters:
+      - description: Watchlist ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Watchlist'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get watchlist item by ID
+      tags:
+      - Watchlist
+    put:
+      consumes:
+      - application/json
+      description: Update a watchlist item (currently only notes)
+      parameters:
+      - description: Watchlist ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateWatchlistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Update watchlist item
+      tags:
+      - Watchlist
+  /watchlist/quotes:
+    get:
+      consumes:
+      - application/json
+      description: Get all watchlist items with real-time market quotes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    additionalProperties: true
+                    type: object
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get watchlist with real-time quotes
+      tags:
+      - Watchlist
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
