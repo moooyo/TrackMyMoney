@@ -239,6 +239,13 @@ func setupRoutes(r *gin.Engine, cfg *config.Config) {
 			market.GET("/history/:symbol", handlers.GetHistory)
 			market.GET("/info/:symbol", handlers.GetInfo)
 			market.GET("/search", handlers.SearchMarket)
+			market.GET("/ws-url", handlers.GetMarketWebSocketURL)
+		}
+
+		// WebSocket proxy routes (for real-time market data)
+		ws := protected.Group("/ws")
+		{
+			ws.GET("/market/:symbol", handlers.ProxyMarketWebSocket)
 		}
 
 		// Watchlist routes

@@ -19,8 +19,8 @@ log:
   max_age: 30 # days
 
 market:
-  base_url: "http://localhost:5000" # Python Market service URL
-  ws_url: "ws://localhost:5000" # WebSocket URL for real-time market data
+  base_url: "http://127.0.0.1:5000" # REST API URL (internal only)
+  ws_url: "ws://127.0.0.1:5000" # WebSocket URL for real-time market data (proxied through backend)
   timeout: 30 # Request timeout in seconds
   max_retries: 3 # Maximum number of retries
 

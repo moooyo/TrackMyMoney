@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.websocket("/ws/market")
-async def market_websocket(websocket: WebSocket, symbol: str = Query(..., description="Stock or crypto symbol")):
+@router.websocket("/ws/market/{symbol}")
+async def market_websocket(websocket: WebSocket, symbol: str):
     """
     WebSocket endpoint for real-time market data
 
@@ -19,7 +19,7 @@ async def market_websocket(websocket: WebSocket, symbol: str = Query(..., descri
         symbol: Stock or crypto symbol to subscribe to (e.g., AAPL, BTC-USD)
 
     Example:
-        ws://localhost:5000/ws/market?symbol=AAPL
+        ws://localhost:5000/ws/market/AAPL
     """
     symbol = symbol.upper()
     logger.info(f"WebSocket connection attempt for symbol: {symbol}")

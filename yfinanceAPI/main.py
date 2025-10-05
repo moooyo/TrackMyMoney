@@ -24,20 +24,28 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
     logger.info("Market Service starting up...")
-    logger.info(f"Running on {settings.host}:{settings.port}")
+    logger.info(f"Running on {settings.host}:{settings.port} (internal only)")
+
+    # Start WebSocket manager
+    from websocket_manager import ws_manager
+    await ws_manager.start()
+
     yield
+
+    # Stop WebSocket manager
+    await ws_manager.stop()
     logger.info("Market Service shutting down...")
 
 
-# Create FastAPI app
+# Create FastAPI app (单应用，REST + WebSocket)
 app = FastAPI(
     title="TrackMyMoney Market Service",
-    description="Market data service using Yahoo Finance API",
+    description="Market data service using Yahoo Finance API (internal use only)",
     version="1.0.0",
     lifespan=lifespan,
 )
 
-# Configure CORS
+# Configure CORS (仅允许后端访问)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -55,8 +63,8 @@ async def health_check():
 
 
 # Include routers
-app.include_router(market_router)
-app.include_router(websocket_router)
+app.include_router(market_router)  # REST API
+app.include_router(websocket_router)  # WebSocket
 
 
 # Global exception handler
@@ -71,6 +79,11 @@ async def global_exception_handler(request, exc):
 
 if __name__ == "__main__":
     import uvicorn
+
+    logger.info("=" * 60)
+    logger.info("TrackMyMoney Market Service")
+    logger.info(f"Listening on {settings.host}:{settings.port} (internal only)")
+    logger.info("=" * 60)
 
     uvicorn.run(
         "main:app",

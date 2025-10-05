@@ -4,19 +4,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TrackMyMoney is a full-stack financial asset tracking system with a **React 19 + TypeScript** frontend and a **Golang 1.25 + Gin** backend. The project uses MSW for API mocking during frontend development, enabling complete frontend-backend decoupling.
+TrackMyMoney is a full-stack financial asset tracking system with:
+- **Frontend**: React 19 + TypeScript (port 3000)
+- **Backend**: Golang 1.25 + Gin (port 8080)
+- **yfinanceAPI**: Python FastAPI market data service (port 5000, internal only)
+
+The project uses MSW for API mocking during frontend development, enabling complete frontend-backend decoupling.
+
+### Architecture Overview
+
+- **yfinanceAPI** runs on `127.0.0.1:5000` (internal only, REST + WebSocket)
+- **Backend** provides WebSocket proxy at `ws://localhost:8080/ws/market/{symbol}`
+- **Frontend** connects to backend's WebSocket proxy (not directly to yfinanceAPI)
+- All yfinanceAPI access (REST & WebSocket) goes through backend for security
+
+### Project Structure
+
+```
+TrackMyMoney/
+├── frontend/        # React 19 + TypeScript frontend
+├── backend/         # Golang 1.25 + Gin API server
+└── yfinanceAPI/     # Python FastAPI market data service
+```
 
 ## Development Commands
 
 ### Starting the Application
 
 ```bash
-make web          # Frontend with MSW Mock (port 3000) - for pure frontend dev
-make web-prod     # Frontend connecting to real backend (port 3000)
-make server       # Backend API server (port 8080)
+make web              # Frontend with MSW Mock (port 3000) - for pure frontend dev
+make web-prod         # Frontend connecting to real backend (port 3000)
+make server           # Backend API server + yfinanceAPI (ports 8080, 5000)
+make server-only      # Backend API server only (port 8080)
+make yfinance         # yfinanceAPI service (port 5000, internal only)
+make yfinance-dev     # yfinanceAPI with auto-reload
 ```
 
-**Important**: `make web` uses MSW Mock by default. Use `make web-prod` for frontend-backend integration, but ensure backend is running first.
+**Important**:
+- `make web` uses MSW Mock by default (no backend needed)
+- `make web-prod` requires backend services running
+- `make server` starts both backend API and yfinanceAPI services
+- **yfinanceAPI**: Runs on `127.0.0.1:5000` (internal only, accessed via backend proxy)
+- **WebSocket**: Frontend uses `ws://localhost:8080/ws/market/{symbol}` (proxied to yfinanceAPI)
 
 ### Code Generation
 
@@ -41,6 +70,7 @@ make lint-frontend      # Run ESLint on frontend
 
 ```bash
 make install-tools      # Install swag, swagger-typescript-api, and dependencies
+make install-yfinance   # Install yfinanceAPI Python dependencies
 make clean              # Remove generated files
 make clean-all          # Remove generated files + node_modules/vendor
 ```
@@ -105,6 +135,53 @@ backend/
 - JWT-based auth configured in `config.yaml` with hardcoded credentials (admin/admin123)
 - Token stored in localStorage on frontend
 - `handlers.SetConfig()` must be called before routing setup
+
+### yfinanceAPI Architecture
+
+**Python FastAPI Service with Dual-Port Design**:
+
+yfinanceAPI采用**双端口架构**，将REST API和WebSocket分离到不同端口：
+
+- **REST API (端口 5000)**: 监听 `127.0.0.1:5000`，仅本地访问，供后端服务调用
+- **WebSocket (端口 5001)**: 监听 `0.0.0.0:5001`，对外暴露，供前端实时连接
+
+```
+yfinanceAPI/
+├── main.py                 # 双服务器入口点
+├── config.py               # 双端口配置
+├── websocket_manager.py    # WebSocket连接管理器
+├── models/                 # Pydantic模型
+│   ├── quote.py           # 行情数据模型
+│   ├── history.py         # 历史数据模型
+│   └── response.py        # 响应包装器
+├── routes/                 # API路由
+│   ├── market.py          # REST API端点
+│   └── websocket.py       # WebSocket端点
+├── services/              # 业务逻辑
+│   └── market_service.py  # yfinance封装服务
+└── requirements.txt       # Python依赖
+```
+
+**REST API Endpoints** (http://127.0.0.1:5000):
+- `GET /api/market/quote/{symbol}` - 获取实时行情
+- `POST /api/market/quotes` - 批量获取行情
+- `GET /api/market/history/{symbol}` - 获取历史数据
+- `GET /api/market/info/{symbol}` - 获取资产信息
+- `GET /api/market/search` - 搜索股票/加密货币
+
+**WebSocket Endpoints** (ws://0.0.0.0:5001):
+- `WS /ws/market?symbol={symbol}` - 实时行情推送
+
+**端口设计理念**:
+- **安全隔离**: REST API仅本地可访问，防止外部直接调用
+- **职责分离**: WebSocket独立端口，便于负载均衡和扩展
+- **访问控制**: 后端使用127.0.0.1:5000，前端使用localhost:5001
+
+**Technology Stack**:
+- FastAPI for REST & WebSocket APIs
+- yfinance library for market data
+- Pydantic for data validation
+- Uvicorn as ASGI server (dual-port mode)
 
 ### Asset Management System
 
