@@ -6,7 +6,12 @@ import (
 	"trackmymoney/internal/config"
 	"trackmymoney/internal/database"
 	"trackmymoney/internal/handlers"
+	"trackmymoney/internal/jobs"
+	"trackmymoney/internal/middleware"
+	"trackmymoney/internal/repository"
+	"trackmymoney/internal/scheduler"
 	"trackmymoney/internal/services"
+	"trackmymoney/internal/services/notification"
 	"trackmymoney/pkg/logger"
 )
 
@@ -52,6 +57,19 @@ func main() {
 
 	logger.Info("Database initialized successfully")
 
+	// Initialize repository
+	assetRepo := repository.NewAssetRepository(database.GetDB())
+	logger.Info("Asset repository initialized")
+
+	// Initialize asset services
+	assetService := services.NewAssetService(database.GetDB())
+	handlers.SetAssetService(assetService)
+	logger.Info("Asset service initialized")
+
+	cashAssetService := services.NewCashAssetService(assetRepo)
+	handlers.SetCashAssetService(cashAssetService)
+	logger.Info("Cash asset service initialized")
+
 	// Set config for auth handlers
 	handlers.SetConfig(cfg)
 
@@ -74,6 +92,42 @@ func main() {
 	handlers.SetWatchlistService(watchlistService)
 	logger.Info("Watchlist service initialized")
 
+	// Initialize notification service
+	notificationService := notification.NewService()
+	handlers.SetNotificationService(notificationService)
+	logger.Info("Notification service initialized")
+
+	// Initialize scheduler if enabled
+	var schedulerInstance *scheduler.Scheduler
+	if cfg.Scheduler.Enabled {
+		schedulerInstance = scheduler.New(scheduler.Config{
+			Enabled:       cfg.Scheduler.Enabled,
+			CheckInterval: cfg.Scheduler.CheckInterval,
+			Timezone:      cfg.Scheduler.Timezone,
+		})
+		handlers.SetScheduler(schedulerInstance)
+
+		// Register built-in jobs
+		dailySnapshotJob := jobs.NewDailySnapshotJob(assetMarketService, assetService)
+		if err := schedulerInstance.AddJob("daily_snapshot", dailySnapshotJob, "0 6 * * *"); err != nil {
+			logger.Error("Failed to add daily snapshot job", zap.Error(err))
+		} else {
+			logger.Info("Daily snapshot job registered", zap.String("schedule", "0 6 * * *"))
+		}
+
+		notificationDispatchJob := jobs.NewNotificationDispatchJob(notificationService)
+		if err := schedulerInstance.AddJob("notification_dispatch", notificationDispatchJob, "*/30 * * * *"); err != nil {
+			logger.Error("Failed to add notification dispatch job", zap.Error(err))
+		} else {
+			logger.Info("Notification dispatch job registered", zap.String("schedule", "*/30 * * * *"))
+		}
+
+		// Start scheduler
+		schedulerInstance.Start()
+		logger.Info("Scheduler started")
+		defer schedulerInstance.Stop()
+	}
+
 	// Set Gin mode
 	gin.SetMode(cfg.Server.Mode)
 
@@ -81,7 +135,7 @@ func main() {
 	r := gin.Default()
 
 	// Setup routes
-	setupRoutes(r)
+	setupRoutes(r, cfg)
 
 	// Start server
 	logger.Info("Server listening", zap.String("port", cfg.Server.Port))
@@ -90,8 +144,8 @@ func main() {
 	}
 }
 
-func setupRoutes(r *gin.Engine) {
-	// Health check endpoint
+func setupRoutes(r *gin.Engine, cfg *config.Config) {
+	// Health check endpoint (public)
 	r.GET("/health", func(c *gin.Context) {
 		logger.Debug("Health check requested")
 		c.JSON(200, gin.H{
@@ -101,9 +155,23 @@ func setupRoutes(r *gin.Engine) {
 
 	// API routes
 	api := r.Group("/api")
+
+	// Auth routes (public - no authentication required)
+	auth := api.Group("/auth")
+	{
+		auth.POST("/login", handlers.Login)
+		auth.GET("/verify", handlers.VerifyToken)
+	}
+
+	// Create authentication middleware
+	authMiddleware := middleware.AuthMiddleware(cfg.Auth.JWTSecret)
+
+	// Protected routes (require authentication)
+	protected := api.Group("")
+	protected.Use(authMiddleware)
 	{
 		// Asset routes
-		assets := api.Group("/assets")
+		assets := protected.Group("/assets")
 		{
 			// Cash assets
 			cash := assets.Group("/cash")
@@ -163,7 +231,7 @@ func setupRoutes(r *gin.Engine) {
 		}
 
 		// Market routes
-		market := api.Group("/market")
+		market := protected.Group("/market")
 		{
 			market.GET("/quote/:symbol", handlers.GetQuote)
 			market.POST("/quotes", handlers.GetQuotes)
@@ -173,7 +241,7 @@ func setupRoutes(r *gin.Engine) {
 		}
 
 		// Watchlist routes
-		watchlist := api.Group("/watchlist")
+		watchlist := protected.Group("/watchlist")
 		{
 			watchlist.POST("", handlers.CreateWatchlist)
 			watchlist.GET("", handlers.GetWatchlist)
@@ -184,20 +252,26 @@ func setupRoutes(r *gin.Engine) {
 		}
 
 		// Notification routes
-		notifications := api.Group("/notifications")
+		notifications := protected.Group("/notifications")
 		{
 			notifications.POST("", handlers.CreateNotification)
 			notifications.GET("", handlers.GetNotifications)
 			notifications.GET("/:id", handlers.GetNotification)
 			notifications.PUT("/:id", handlers.UpdateNotification)
 			notifications.DELETE("/:id", handlers.DeleteNotification)
+			notifications.POST("/:id/test", handlers.TestNotification)
 		}
 
-		// Auth routes
-		auth := api.Group("/auth")
+		// Scheduled job routes
+		jobs := protected.Group("/jobs")
 		{
-			auth.POST("/login", handlers.Login)
-			auth.GET("/verify", handlers.VerifyToken)
+			jobs.POST("", handlers.CreateScheduledJob)
+			jobs.GET("", handlers.GetScheduledJobs)
+			jobs.GET("/:id", handlers.GetScheduledJob)
+			jobs.PUT("/:id", handlers.UpdateScheduledJob)
+			jobs.DELETE("/:id", handlers.DeleteScheduledJob)
+			jobs.POST("/:id/trigger", handlers.TriggerScheduledJob)
+			jobs.GET("/logs", handlers.GetJobExecutionLogs)
 		}
 	}
 }

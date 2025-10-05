@@ -159,6 +159,25 @@ definitions:
     - config
     - name
     type: object
+  handlers.CreateScheduledJobRequest:
+    properties:
+      config:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      name:
+        type: string
+      schedule:
+        type: string
+      type:
+        type: string
+    required:
+    - name
+    - schedule
+    - type
+    type: object
   handlers.CreateStockAssetRequest:
     properties:
       broker_account:
@@ -323,6 +342,21 @@ definitions:
       name:
         type: string
       schedule:
+        type: string
+    type: object
+  handlers.UpdateScheduledJobRequest:
+    properties:
+      config:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      name:
+        type: string
+      schedule:
+        type: string
+      type:
         type: string
     type: object
   handlers.UpdateStockAssetRequest:
@@ -547,6 +581,29 @@ definitions:
       updated_at:
         type: string
     type: object
+  models.JobExecutionLog:
+    properties:
+      created_at:
+        type: string
+      duration:
+        description: Duration in milliseconds
+        type: integer
+      error_msg:
+        type: string
+      finished_at:
+        type: string
+      id:
+        type: integer
+      job_name:
+        type: string
+      started_at:
+        type: string
+      status:
+        description: '"success", "failed", "running"'
+        type: string
+      updated_at:
+        type: string
+    type: object
   models.Notification:
     properties:
       channel:
@@ -625,6 +682,34 @@ definitions:
         type: array
       success_count:
         type: integer
+    type: object
+  models.ScheduledJob:
+    properties:
+      config:
+        description: JSON string of job-specific config
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: integer
+      last_run_at:
+        type: string
+      name:
+        type: string
+      next_run_at:
+        type: string
+      schedule:
+        description: Cron expression
+        type: string
+      type:
+        description: '"snapshot", "notification", etc.'
+        type: string
+      updated_at:
+        type: string
     type: object
   models.SearchResponse:
     properties:
@@ -1548,6 +1633,170 @@ paths:
       summary: Verify token
       tags:
       - auth
+  /api/jobs:
+    get:
+      description: Get all scheduled jobs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.ScheduledJob'
+                  type: array
+              type: object
+      summary: List scheduled jobs
+      tags:
+      - jobs
+    post:
+      consumes:
+      - application/json
+      description: Create a new scheduled job
+      parameters:
+      - description: Job info
+        in: body
+        name: job
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateScheduledJobRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ScheduledJob'
+              type: object
+      summary: Create scheduled job
+      tags:
+      - jobs
+  /api/jobs/{id}:
+    delete:
+      description: Delete a scheduled job
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Delete scheduled job
+      tags:
+      - jobs
+    get:
+      description: Get a scheduled job by ID
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ScheduledJob'
+              type: object
+      summary: Get scheduled job
+      tags:
+      - jobs
+    put:
+      consumes:
+      - application/json
+      description: Update a scheduled job
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Job info
+        in: body
+        name: job
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateScheduledJobRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ScheduledJob'
+              type: object
+      summary: Update scheduled job
+      tags:
+      - jobs
+  /api/jobs/{id}/trigger:
+    post:
+      description: Manually trigger a scheduled job
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Trigger scheduled job
+      tags:
+      - jobs
+  /api/jobs/logs:
+    get:
+      description: Get execution logs for a scheduled job
+      parameters:
+      - description: Filter by job name
+        in: query
+        name: job_name
+        type: string
+      - default: 50
+        description: Limit results
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.JobExecutionLog'
+                  type: array
+              type: object
+      summary: Get job execution logs
+      tags:
+      - jobs
   /api/notifications:
     get:
       description: Get all notification configurations
@@ -1663,6 +1912,23 @@ paths:
                   $ref: '#/definitions/models.Notification'
               type: object
       summary: Update notification
+      tags:
+      - notifications
+  /api/notifications/{id}/test:
+    post:
+      description: Send a test notification
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Test notification
       tags:
       - notifications
   /market/history/{symbol}:

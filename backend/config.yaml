@@ -23,3 +23,8 @@ market:
   ws_url: "ws://localhost:5000" # WebSocket URL for real-time market data
   timeout: 30 # Request timeout in seconds
   max_retries: 3 # Maximum number of retries
+
+scheduler:
+  enabled: true
+  check_interval: 60 # Check interval in seconds
+  timezone: "Asia/Shanghai"

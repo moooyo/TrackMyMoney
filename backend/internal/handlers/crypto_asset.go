@@ -11,13 +11,6 @@ import (
 	"trackmymoney/pkg/response"
 )
 
-// RefreshPricesResponse represents the response for price refresh operations
-type RefreshPricesResponse struct {
-	Message string   `json:"message"`
-	Updated int      `json:"updated"`
-	Failed  []string `json:"failed"`
-}
-
 // CreateCryptoAssetRequest represents the request body for creating a crypto asset
 type CreateCryptoAssetRequest struct {
 	Name          string  `json:"name" binding:"required"`

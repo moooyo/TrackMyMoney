@@ -5,11 +5,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"trackmymoney/internal/database"
 	"trackmymoney/internal/models"
+	"trackmymoney/internal/services"
 	"trackmymoney/pkg/logger"
 	"trackmymoney/pkg/response"
 )
+
+// CashAssetHandler handles cash asset requests
+type CashAssetHandler struct {
+	service *services.CashAssetService
+}
+
+// NewCashAssetHandler creates a new cash asset handler
+func NewCashAssetHandler(service *services.CashAssetService) *CashAssetHandler {
+	return &CashAssetHandler{
+		service: service,
+	}
+}
+
+// Legacy global variable for backward compatibility (will be removed)
+var globalCashAssetService *services.CashAssetService
+
+// SetCashAssetService sets the global cash asset service instance (deprecated)
+func SetCashAssetService(service *services.CashAssetService) {
+	globalCashAssetService = service
+}
 
 // CreateCashAssetRequest represents the request body for creating a cash asset
 type CreateCashAssetRequest struct {
@@ -27,16 +47,8 @@ type UpdateCashAssetRequest struct {
 	Description *string  `json:"description"`
 }
 
-// CreateCashAsset creates a new cash asset
-// @Summary Create cash asset
-// @Description Create a new cash asset
-// @Tags assets
-// @Accept json
-// @Produce json
-// @Param asset body CreateCashAssetRequest true "Cash asset info"
-// @Success 200 {object} response.Response{data=models.CashAsset}
-// @Router /api/assets/cash [post]
-func CreateCashAsset(c *gin.Context) {
+// Create creates a new cash asset (method for dependency injection)
+func (h *CashAssetHandler) Create(c *gin.Context) {
 	var req CreateCashAssetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error("Invalid request", zap.Error(err))
@@ -51,12 +63,47 @@ func CreateCashAsset(c *gin.Context) {
 		Description: req.Description,
 	}
 
-	if asset.Currency == "" {
-		asset.Currency = "CNY"
+	if err := h.service.Create(&asset); err != nil {
+		logger.Error("Failed to create cash asset", zap.Error(err))
+		response.InternalError(c, "Failed to create cash asset")
+		return
 	}
 
-	db := database.GetDB()
-	if err := db.Create(&asset).Error; err != nil {
+	logger.Info("Cash asset created", zap.Uint("id", asset.ID))
+	response.Success(c, asset)
+}
+
+// CreateCashAsset creates a new cash asset (legacy global function)
+// @Summary Create cash asset
+// @Description Create a new cash asset
+// @Tags assets
+// @Accept json
+// @Produce json
+// @Param asset body CreateCashAssetRequest true "Cash asset info"
+// @Success 200 {object} response.Response{data=models.CashAsset}
+// @Router /api/assets/cash [post]
+func CreateCashAsset(c *gin.Context) {
+	if globalCashAssetService == nil {
+		logger.Error("CashAssetService not initialized")
+		response.InternalError(c, "Service not available")
+		return
+	}
+
+	var req CreateCashAssetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error("Invalid request", zap.Error(err))
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	asset := models.CashAsset{
+		Name:        req.Name,
+		Amount:      req.Amount,
+		Currency:    req.Currency,
+		Description: req.Description,
+	}
+
+	if err := globalCashAssetService.Create(&asset); err != nil {
 		logger.Error("Failed to create cash asset", zap.Error(err))
 		response.InternalError(c, "Failed to create cash asset")
 		return
@@ -74,10 +121,14 @@ func CreateCashAsset(c *gin.Context) {
 // @Success 200 {object} response.Response{data=[]models.CashAsset}
 // @Router /api/assets/cash [get]
 func GetCashAssets(c *gin.Context) {
-	var assets []models.CashAsset
-	db := database.GetDB()
+	if globalCashAssetService == nil {
+		logger.Error("CashAssetService not initialized")
+		response.InternalError(c, "Service not available")
+		return
+	}
 
-	if err := db.Find(&assets).Error; err != nil {
+	assets, err := globalCashAssetService.GetAll()
+	if err != nil {
 		logger.Error("Failed to retrieve cash assets", zap.Error(err))
 		response.InternalError(c, "Failed to retrieve cash assets")
 		return
@@ -95,16 +146,20 @@ func GetCashAssets(c *gin.Context) {
 // @Success 200 {object} response.Response{data=models.CashAsset}
 // @Router /api/assets/cash/{id} [get]
 func GetCashAsset(c *gin.Context) {
+	if globalCashAssetService == nil {
+		logger.Error("CashAssetService not initialized")
+		response.InternalError(c, "Service not available")
+		return
+	}
+
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		response.BadRequest(c, "Invalid asset ID")
 		return
 	}
 
-	var asset models.CashAsset
-	db := database.GetDB()
-
-	if err := db.First(&asset, id).Error; err != nil {
+	asset, err := globalCashAssetService.GetByID(uint(id))
+	if err != nil {
 		logger.Error("Cash asset not found", zap.Error(err))
 		response.NotFound(c, "Cash asset not found")
 		return
@@ -124,6 +179,12 @@ func GetCashAsset(c *gin.Context) {
 // @Success 200 {object} response.Response{data=models.CashAsset}
 // @Router /api/assets/cash/{id} [put]
 func UpdateCashAsset(c *gin.Context) {
+	if globalCashAssetService == nil {
+		logger.Error("CashAssetService not initialized")
+		response.InternalError(c, "Service not available")
+		return
+	}
+
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		response.BadRequest(c, "Invalid asset ID")
@@ -137,30 +198,23 @@ func UpdateCashAsset(c *gin.Context) {
 		return
 	}
 
-	db := database.GetDB()
-	var asset models.CashAsset
-
-	if err := db.First(&asset, id).Error; err != nil {
-		logger.Error("Cash asset not found", zap.Error(err))
-		response.NotFound(c, "Cash asset not found")
-		return
-	}
-
-	// Update fields if provided
+	// Build updates map
+	updates := make(map[string]interface{})
 	if req.Name != nil {
-		asset.Name = *req.Name
+		updates["name"] = *req.Name
 	}
 	if req.Amount != nil {
-		asset.Amount = *req.Amount
+		updates["amount"] = *req.Amount
 	}
 	if req.Currency != nil {
-		asset.Currency = *req.Currency
+		updates["currency"] = *req.Currency
 	}
 	if req.Description != nil {
-		asset.Description = *req.Description
+		updates["description"] = *req.Description
 	}
 
-	if err := db.Save(&asset).Error; err != nil {
+	asset, err := globalCashAssetService.Update(uint(id), updates)
+	if err != nil {
 		logger.Error("Failed to update cash asset", zap.Error(err))
 		response.InternalError(c, "Failed to update cash asset")
 		return
@@ -178,24 +232,21 @@ func UpdateCashAsset(c *gin.Context) {
 // @Success 200 {object} response.Response
 // @Router /api/assets/cash/{id} [delete]
 func DeleteCashAsset(c *gin.Context) {
+	if globalCashAssetService == nil {
+		logger.Error("CashAssetService not initialized")
+		response.InternalError(c, "Service not available")
+		return
+	}
+
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		response.BadRequest(c, "Invalid asset ID")
 		return
 	}
 
-	db := database.GetDB()
-	var asset models.CashAsset
-
-	if err := db.First(&asset, id).Error; err != nil {
-		logger.Error("Cash asset not found", zap.Error(err))
-		response.NotFound(c, "Cash asset not found")
-		return
-	}
-
-	if err := db.Delete(&asset).Error; err != nil {
+	if err := globalCashAssetService.Delete(uint(id)); err != nil {
 		logger.Error("Failed to delete cash asset", zap.Error(err))
-		response.InternalError(c, "Failed to delete cash asset")
+		response.NotFound(c, "Cash asset not found")
 		return
 	}
 

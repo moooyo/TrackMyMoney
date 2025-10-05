@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -206,4 +208,57 @@ func DeleteNotification(c *gin.Context) {
 
 	logger.Info("Notification deleted", zap.Uint("id", uint(id)))
 	response.Success(c, gin.H{"message": "Notification deleted successfully"})
+}
+
+var notificationService interface {
+	SendNotification(ctx context.Context, notification *models.Notification, title string, message string) error
+}
+
+// SetNotificationService sets the notification service
+func SetNotificationService(service interface {
+	SendNotification(ctx context.Context, notification *models.Notification, title string, message string) error
+}) {
+	notificationService = service
+}
+
+// @Summary Test notification
+// @Description Send a test notification
+// @Tags notifications
+// @Param id path int true "Notification ID"
+// @Success 200 {object} response.Response
+// @Router /api/notifications/{id}/test [post]
+func TestNotification(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid notification ID")
+		return
+	}
+
+	var notification models.Notification
+	db := database.GetDB()
+
+	if err := db.First(&notification, id).Error; err != nil {
+		logger.Error("Notification not found", zap.Error(err))
+		response.NotFound(c, "Notification not found")
+		return
+	}
+
+	if notificationService == nil {
+		response.InternalError(c, "Notification service not initialized")
+		return
+	}
+
+	// Send test notification
+	title := "TrackMyMoney 测试通知"
+	message := "这是一条测试通知，如果您收到此消息，说明通知配置正确。\n\n发送时间: " + time.Now().Format("2006-01-02 15:04:05")
+
+	ctx := c.Request.Context()
+	if err := notificationService.SendNotification(ctx, &notification, title, message); err != nil {
+		logger.Error("Failed to send test notification", zap.Uint("id", notification.ID), zap.Error(err))
+		response.InternalError(c, "Failed to send test notification: "+err.Error())
+		return
+	}
+
+	logger.Info("Test notification sent", zap.Uint("id", notification.ID), zap.String("channel", string(notification.Channel)))
+	response.Success(c, gin.H{"message": "Test notification sent successfully"})
 }

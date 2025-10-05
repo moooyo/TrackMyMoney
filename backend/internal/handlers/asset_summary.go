@@ -1,15 +1,19 @@
 package handlers
 
 import (
-	"time"
-
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"trackmymoney/internal/database"
-	"trackmymoney/internal/models"
+	"trackmymoney/internal/services"
 	"trackmymoney/pkg/logger"
 	"trackmymoney/pkg/response"
 )
+
+var globalAssetService *services.AssetService
+
+// SetAssetService sets the global asset service instance
+func SetAssetService(service *services.AssetService) {
+	globalAssetService = service
+}
 
 type AssetsSummary struct {
 	TotalAssets float64            `json:"total_assets"`
@@ -34,90 +38,28 @@ type AssetHistory struct {
 // @Success 200 {object} response.Response{data=AssetsSummary}
 // @Router /api/assets/summary [get]
 func GetAssetsSummary(c *gin.Context) {
-	db := database.GetDB()
-
-	var totalAssets float64
-	var totalDebt float64
-	categories := make(map[string]float64)
-
-	// Sum cash assets
-	var cashAssets []models.CashAsset
-	if err := db.Find(&cashAssets).Error; err != nil {
-		logger.Error("Failed to retrieve cash assets", zap.Error(err))
-		response.InternalError(c, "Failed to retrieve cash assets")
+	if globalAssetService == nil {
+		logger.Error("AssetService not initialized")
+		response.InternalError(c, "Service not available")
 		return
 	}
-	for _, asset := range cashAssets {
-		totalAssets += asset.Amount
-		categories["cash"] += asset.Amount
-	}
 
-	// Sum interest-bearing assets
-	var interestBearingAssets []models.InterestBearingAsset
-	if err := db.Find(&interestBearingAssets).Error; err != nil {
-		logger.Error("Failed to retrieve interest-bearing assets", zap.Error(err))
-		response.InternalError(c, "Failed to retrieve interest-bearing assets")
+	summary, err := globalAssetService.CalculateAssetSummary()
+	if err != nil {
+		logger.Error("Failed to calculate asset summary", zap.Error(err))
+		response.InternalError(c, "Failed to calculate asset summary")
 		return
 	}
-	for _, asset := range interestBearingAssets {
-		totalAssets += asset.Amount
-		categories["interest_bearing"] += asset.Amount
+
+	// Convert to response format
+	responseSummary := AssetsSummary{
+		TotalAssets: summary.TotalAssets,
+		TotalDebt:   summary.TotalDebt,
+		NetAssets:   summary.NetAssets,
+		Categories:  summary.Categories,
 	}
 
-	// Sum stock assets
-	var stockAssets []models.StockAsset
-	if err := db.Find(&stockAssets).Error; err != nil {
-		logger.Error("Failed to retrieve stock assets", zap.Error(err))
-		response.InternalError(c, "Failed to retrieve stock assets")
-		return
-	}
-	for _, asset := range stockAssets {
-		value := asset.Quantity * asset.CurrentPrice
-		if asset.CurrentPrice == 0 {
-			value = asset.Quantity * asset.PurchasePrice
-		}
-		totalAssets += value
-		categories["stock"] += value
-	}
-
-	// Sum crypto assets
-	var cryptoAssets []models.CryptoAsset
-	if err := db.Find(&cryptoAssets).Error; err != nil {
-		logger.Error("Failed to retrieve crypto assets", zap.Error(err))
-		response.InternalError(c, "Failed to retrieve crypto assets")
-		return
-	}
-	for _, asset := range cryptoAssets {
-		value := asset.Quantity * asset.CurrentPrice
-		if asset.CurrentPrice == 0 {
-			value = asset.Quantity * asset.PurchasePrice
-		}
-		totalAssets += value
-		categories["crypto"] += value
-	}
-
-	// Sum debt assets
-	var debtAssets []models.DebtAsset
-	if err := db.Find(&debtAssets).Error; err != nil {
-		logger.Error("Failed to retrieve debt assets", zap.Error(err))
-		response.InternalError(c, "Failed to retrieve debt assets")
-		return
-	}
-	for _, asset := range debtAssets {
-		totalDebt += asset.Amount
-		categories["debt"] += asset.Amount
-	}
-
-	netAssets := totalAssets - totalDebt
-
-	summary := AssetsSummary{
-		TotalAssets: totalAssets,
-		TotalDebt:   totalDebt,
-		NetAssets:   netAssets,
-		Categories:  categories,
-	}
-
-	response.Success(c, summary)
+	response.Success(c, responseSummary)
 }
 
 // GetAssetsHistory gets historical assets data
@@ -129,28 +71,16 @@ func GetAssetsSummary(c *gin.Context) {
 // @Success 200 {object} response.Response{data=[]AssetHistory}
 // @Router /api/assets/history [get]
 func GetAssetsHistory(c *gin.Context) {
-	period := c.DefaultQuery("period", "30d")
-
-	var startDate time.Time
-	now := time.Now()
-
-	switch period {
-	case "7d":
-		startDate = now.AddDate(0, 0, -7)
-	case "30d":
-		startDate = now.AddDate(0, 0, -30)
-	case "90d":
-		startDate = now.AddDate(0, 0, -90)
-	case "1y":
-		startDate = now.AddDate(-1, 0, 0)
-	default:
-		startDate = now.AddDate(0, 0, -30)
+	if globalAssetService == nil {
+		logger.Error("AssetService not initialized")
+		response.InternalError(c, "Service not available")
+		return
 	}
 
-	var historyRecords []models.AssetHistory
-	db := database.GetDB()
+	period := c.DefaultQuery("period", "30d")
 
-	if err := db.Where("date >= ?", startDate).Order("date ASC").Find(&historyRecords).Error; err != nil {
+	historyRecords, err := globalAssetService.GetAssetHistory(period)
+	if err != nil {
 		logger.Error("Failed to retrieve asset history", zap.Error(err))
 		response.InternalError(c, "Failed to retrieve asset history")
 		return
@@ -164,66 +94,6 @@ func GetAssetsHistory(c *gin.Context) {
 			TotalAssets: record.TotalAssets,
 			TotalDebt:   record.TotalDebt,
 			NetAssets:   record.NetAssets,
-		})
-	}
-
-	// If no history, generate current snapshot from all asset types
-	if len(history) == 0 {
-		var totalAssets, totalDebt float64
-
-		// Cash assets
-		var cashAssets []models.CashAsset
-		if err := db.Find(&cashAssets).Error; err == nil {
-			for _, asset := range cashAssets {
-				totalAssets += asset.Amount
-			}
-		}
-
-		// Interest-bearing assets
-		var interestBearingAssets []models.InterestBearingAsset
-		if err := db.Find(&interestBearingAssets).Error; err == nil {
-			for _, asset := range interestBearingAssets {
-				totalAssets += asset.Amount
-			}
-		}
-
-		// Stock assets
-		var stockAssets []models.StockAsset
-		if err := db.Find(&stockAssets).Error; err == nil {
-			for _, asset := range stockAssets {
-				value := asset.Quantity * asset.CurrentPrice
-				if asset.CurrentPrice == 0 {
-					value = asset.Quantity * asset.PurchasePrice
-				}
-				totalAssets += value
-			}
-		}
-
-		// Crypto assets
-		var cryptoAssets []models.CryptoAsset
-		if err := db.Find(&cryptoAssets).Error; err == nil {
-			for _, asset := range cryptoAssets {
-				value := asset.Quantity * asset.CurrentPrice
-				if asset.CurrentPrice == 0 {
-					value = asset.Quantity * asset.PurchasePrice
-				}
-				totalAssets += value
-			}
-		}
-
-		// Debt assets
-		var debtAssets []models.DebtAsset
-		if err := db.Find(&debtAssets).Error; err == nil {
-			for _, asset := range debtAssets {
-				totalDebt += asset.Amount
-			}
-		}
-
-		history = append(history, AssetHistory{
-			Date:        now.Format("2006-01-02"),
-			TotalAssets: totalAssets,
-			TotalDebt:   totalDebt,
-			NetAssets:   totalAssets - totalDebt,
 		})
 	}
 

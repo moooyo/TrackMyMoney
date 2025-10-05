@@ -7,11 +7,12 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig   `yaml:"server"`
-	Database DatabaseConfig `yaml:"database"`
-	Auth     AuthConfig     `yaml:"auth"`
-	Log      LogConfig      `yaml:"log"`
-	Market   MarketConfig   `yaml:"market"`
+	Server    ServerConfig    `yaml:"server"`
+	Database  DatabaseConfig  `yaml:"database"`
+	Auth      AuthConfig      `yaml:"auth"`
+	Log       LogConfig       `yaml:"log"`
+	Market    MarketConfig    `yaml:"market"`
+	Scheduler SchedulerConfig `yaml:"scheduler"`
 }
 
 type ServerConfig struct {
@@ -42,6 +43,12 @@ type MarketConfig struct {
 	BaseURL    string `yaml:"base_url"`    // Market service URL
 	Timeout    int    `yaml:"timeout"`     // Request timeout in seconds
 	MaxRetries int    `yaml:"max_retries"` // Maximum number of retries
+}
+
+type SchedulerConfig struct {
+	Enabled       bool   `yaml:"enabled"`
+	CheckInterval int    `yaml:"check_interval"` // Check interval in seconds
+	Timezone      string `yaml:"timezone"`
 }
 
 func Load(path string) (*Config, error) {

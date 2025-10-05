@@ -46,6 +46,8 @@ func AutoMigrate() error {
 		&models.AssetHistory{},
 		&models.AssetSnapshot{},
 		&models.Watchlist{},
+		&models.ScheduledJob{},
+		&models.JobExecutionLog{},
 	)
 }
 

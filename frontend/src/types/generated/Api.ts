@@ -102,6 +102,15 @@ export interface HandlersCreateNotificationRequest {
   schedule?: string;
 }
 
+export interface HandlersCreateScheduledJobRequest {
+  config?: string;
+  description?: string;
+  enabled?: boolean;
+  name: string;
+  schedule: string;
+  type: string;
+}
+
 export interface HandlersCreateStockAssetRequest {
   broker_account: string;
   currency?: string;
@@ -192,6 +201,15 @@ export interface HandlersUpdateNotificationRequest {
   enabled?: boolean;
   name?: string;
   schedule?: string;
+}
+
+export interface HandlersUpdateScheduledJobRequest {
+  config?: string;
+  description?: string;
+  enabled?: boolean;
+  name?: string;
+  schedule?: string;
+  type?: string;
 }
 
 export interface HandlersUpdateStockAssetRequest {
@@ -318,6 +336,20 @@ export interface ModelsInterestBearingAsset {
   updated_at?: string;
 }
 
+export interface ModelsJobExecutionLog {
+  created_at?: string;
+  /** Duration in milliseconds */
+  duration?: number;
+  error_msg?: string;
+  finished_at?: string;
+  id?: number;
+  job_name?: string;
+  started_at?: string;
+  /** "success", "failed", "running" */
+  status?: string;
+  updated_at?: string;
+}
+
 export interface ModelsNotification {
   channel?: ModelsNotificationChannel;
   /** JSON string of channel config */
@@ -354,6 +386,23 @@ export interface ModelsQuotesResponse {
   failed_symbols?: string[];
   quotes?: ModelsQuote[];
   success_count?: number;
+}
+
+export interface ModelsScheduledJob {
+  /** JSON string of job-specific config */
+  config?: string;
+  created_at?: string;
+  description?: string;
+  enabled?: boolean;
+  id?: number;
+  last_run_at?: string;
+  name?: string;
+  next_run_at?: string;
+  /** Cron expression */
+  schedule?: string;
+  /** "snapshot", "notification", etc. */
+  type?: string;
+  updated_at?: string;
 }
 
 export interface ModelsSearchResponse {
@@ -1396,6 +1445,164 @@ export class Api<
       }),
 
     /**
+     * @description Get all scheduled jobs
+     *
+     * @tags jobs
+     * @name JobsList
+     * @summary List scheduled jobs
+     * @request GET:/api/jobs
+     */
+    jobsList: (params: RequestParams = {}) =>
+      this.request<
+        ResponseResponse & {
+          data?: ModelsScheduledJob[];
+        },
+        any
+      >({
+        path: `/api/jobs`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Create a new scheduled job
+     *
+     * @tags jobs
+     * @name JobsCreate
+     * @summary Create scheduled job
+     * @request POST:/api/jobs
+     */
+    jobsCreate: (
+      job: HandlersCreateScheduledJobRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        ResponseResponse & {
+          data?: ModelsScheduledJob;
+        },
+        any
+      >({
+        path: `/api/jobs`,
+        method: "POST",
+        body: job,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get execution logs for a scheduled job
+     *
+     * @tags jobs
+     * @name JobsLogsList
+     * @summary Get job execution logs
+     * @request GET:/api/jobs/logs
+     */
+    jobsLogsList: (
+      query?: {
+        /** Filter by job name */
+        job_name?: string;
+        /**
+         * Limit results
+         * @default 50
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        ResponseResponse & {
+          data?: ModelsJobExecutionLog[];
+        },
+        any
+      >({
+        path: `/api/jobs/logs`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Get a scheduled job by ID
+     *
+     * @tags jobs
+     * @name JobsDetail
+     * @summary Get scheduled job
+     * @request GET:/api/jobs/{id}
+     */
+    jobsDetail: (id: number, params: RequestParams = {}) =>
+      this.request<
+        ResponseResponse & {
+          data?: ModelsScheduledJob;
+        },
+        any
+      >({
+        path: `/api/jobs/${id}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Update a scheduled job
+     *
+     * @tags jobs
+     * @name JobsUpdate
+     * @summary Update scheduled job
+     * @request PUT:/api/jobs/{id}
+     */
+    jobsUpdate: (
+      id: number,
+      job: HandlersUpdateScheduledJobRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        ResponseResponse & {
+          data?: ModelsScheduledJob;
+        },
+        any
+      >({
+        path: `/api/jobs/${id}`,
+        method: "PUT",
+        body: job,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Delete a scheduled job
+     *
+     * @tags jobs
+     * @name JobsDelete
+     * @summary Delete scheduled job
+     * @request DELETE:/api/jobs/{id}
+     */
+    jobsDelete: (id: number, params: RequestParams = {}) =>
+      this.request<ResponseResponse, any>({
+        path: `/api/jobs/${id}`,
+        method: "DELETE",
+        ...params,
+      }),
+
+    /**
+     * @description Manually trigger a scheduled job
+     *
+     * @tags jobs
+     * @name JobsTriggerCreate
+     * @summary Trigger scheduled job
+     * @request POST:/api/jobs/{id}/trigger
+     */
+    jobsTriggerCreate: (id: number, params: RequestParams = {}) =>
+      this.request<ResponseResponse, any>({
+        path: `/api/jobs/${id}/trigger`,
+        method: "POST",
+        ...params,
+      }),
+
+    /**
      * @description Get all notification configurations
      *
      * @tags notifications
@@ -1502,6 +1709,21 @@ export class Api<
       this.request<ResponseResponse, any>({
         path: `/api/notifications/${id}`,
         method: "DELETE",
+        ...params,
+      }),
+
+    /**
+     * @description Send a test notification
+     *
+     * @tags notifications
+     * @name NotificationsTestCreate
+     * @summary Test notification
+     * @request POST:/api/notifications/{id}/test
+     */
+    notificationsTestCreate: (id: number, params: RequestParams = {}) =>
+      this.request<ResponseResponse, any>({
+        path: `/api/notifications/${id}/test`,
+        method: "POST",
         ...params,
       }),
   };
