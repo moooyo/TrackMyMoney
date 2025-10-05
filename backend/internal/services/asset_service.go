@@ -185,3 +185,142 @@ func (s *AssetService) GetAssetHistory(period string) ([]models.AssetHistory, er
 
 	return historyRecords, nil
 }
+
+// AssetStatisticsItem represents a single statistics data point
+type AssetStatisticsItem struct {
+	Date         string  `json:"date"`          // Date or period label
+	TotalAssets  float64 `json:"total_assets"`  // Total assets value
+	Profit       float64 `json:"profit"`        // Profit compared to previous period
+	ProfitRate   float64 `json:"profit_rate"`   // Profit rate in percentage
+	NetAssets    float64 `json:"net_assets"`    // Net assets value
+}
+
+// GetAssetStatistics retrieves asset statistics aggregated by dimension (daily/weekly/monthly)
+func (s *AssetService) GetAssetStatistics(dimension, period string) ([]AssetStatisticsItem, error) {
+	// Get raw history data
+	historyRecords, err := s.GetAssetHistory(period)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(historyRecords) == 0 {
+		return []AssetStatisticsItem{}, nil
+	}
+
+	// Aggregate data by dimension
+	var statistics []AssetStatisticsItem
+
+	switch dimension {
+	case "daily":
+		// Daily: no aggregation needed, use raw data
+		for _, record := range historyRecords {
+			statistics = append(statistics, AssetStatisticsItem{
+				Date:        record.Date.Format("2006-01-02"),
+				TotalAssets: record.TotalAssets,
+				NetAssets:   record.NetAssets,
+			})
+		}
+
+	case "weekly":
+		// Weekly: aggregate by week (Monday to Sunday)
+		weekMap := make(map[string]*AssetStatisticsItem)
+		for _, record := range historyRecords {
+			// Get Monday of the week
+			weekStart := getWeekStart(record.Date)
+			weekKey := weekStart.Format("2006-01-02")
+
+			if _, exists := weekMap[weekKey]; !exists {
+				weekMap[weekKey] = &AssetStatisticsItem{
+					Date: weekKey,
+				}
+			}
+			// Use the latest value in the week
+			if record.Date.After(parseDate(weekMap[weekKey].Date)) || weekMap[weekKey].TotalAssets == 0 {
+				weekMap[weekKey].TotalAssets = record.TotalAssets
+				weekMap[weekKey].NetAssets = record.NetAssets
+			}
+		}
+
+		// Convert map to sorted slice
+		var weeks []string
+		for week := range weekMap {
+			weeks = append(weeks, week)
+		}
+		sortDates(weeks)
+		for _, week := range weeks {
+			statistics = append(statistics, *weekMap[week])
+		}
+
+	case "monthly":
+		// Monthly: aggregate by month
+		monthMap := make(map[string]*AssetStatisticsItem)
+		for _, record := range historyRecords {
+			monthKey := record.Date.Format("2006-01")
+
+			if _, exists := monthMap[monthKey]; !exists {
+				monthMap[monthKey] = &AssetStatisticsItem{
+					Date: monthKey,
+				}
+			}
+			// Use the latest value in the month
+			if record.Date.After(parseDate(monthMap[monthKey].Date)) || monthMap[monthKey].TotalAssets == 0 {
+				monthMap[monthKey].TotalAssets = record.TotalAssets
+				monthMap[monthKey].NetAssets = record.NetAssets
+			}
+		}
+
+		// Convert map to sorted slice
+		var months []string
+		for month := range monthMap {
+			months = append(months, month)
+		}
+		sortDates(months)
+		for _, month := range months {
+			statistics = append(statistics, *monthMap[month])
+		}
+
+	default:
+		// Default to daily
+		return s.GetAssetStatistics("daily", period)
+	}
+
+	// Calculate profit and profit rate
+	for i := range statistics {
+		if i > 0 {
+			prevAssets := statistics[i-1].TotalAssets
+			currentAssets := statistics[i].TotalAssets
+			statistics[i].Profit = currentAssets - prevAssets
+			if prevAssets > 0 {
+				statistics[i].ProfitRate = (statistics[i].Profit / prevAssets) * 100
+			}
+		}
+	}
+
+	return statistics, nil
+}
+
+// Helper function: get Monday of the week
+func getWeekStart(t time.Time) time.Time {
+	weekday := t.Weekday()
+	if weekday == 0 {
+		weekday = 7 // Sunday
+	}
+	return t.AddDate(0, 0, -int(weekday)+1)
+}
+
+// Helper function: parse date string
+func parseDate(dateStr string) time.Time {
+	t, _ := time.Parse("2006-01-02", dateStr)
+	return t
+}
+
+// Helper function: sort date strings
+func sortDates(dates []string) {
+	for i := 0; i < len(dates)-1; i++ {
+		for j := i + 1; j < len(dates); j++ {
+			if dates[i] > dates[j] {
+				dates[i], dates[j] = dates[j], dates[i]
+			}
+		}
+	}
+}

@@ -4,6 +4,7 @@ import { ProLayout } from '@ant-design/pro-components';
 import {
   DashboardOutlined,
   WalletOutlined,
+  LineChartOutlined,
   BellOutlined,
   LogoutOutlined,
   StarOutlined,
@@ -29,6 +30,11 @@ export default function BasicLayout() {
       path: '/assets',
       name: '资产管理',
       icon: <WalletOutlined />,
+    },
+    {
+      path: '/statistics',
+      name: '收益统计',
+      icon: <LineChartOutlined />,
     },
     {
       path: '/watchlist',

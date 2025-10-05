@@ -6,6 +6,7 @@ import BasicLayout from '@/layouts/BasicLayout';
 import Login from '@/pages/Login';
 import Home from '@/pages/Home';
 import Assets from '@/pages/Assets';
+import Statistics from '@/pages/Statistics';
 import Notifications from '@/pages/Notifications';
 import Watchlist from '@/pages/Watchlist';
 
@@ -49,6 +50,7 @@ function App() {
           >
             <Route index element={<Home />} />
             <Route path="assets" element={<Assets />} />
+            <Route path="statistics" element={<Statistics />} />
             <Route path="watchlist" element={<Watchlist />} />
             <Route path="market" element={<Navigate to="/watchlist" replace />} />
             <Route path="notifications" element={<Notifications />} />

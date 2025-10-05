@@ -867,7 +867,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/handlers.AssetHistory"
+                                                "$ref": "#/definitions/handlers.AssetHistoryResponse"
                                             }
                                         }
                                     }
@@ -1068,6 +1068,57 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/assets/statistics": {
+            "get": {
+                "description": "Get assets statistics aggregated by dimension (daily/weekly/monthly)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Get assets statistics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "daily",
+                        "description": "Aggregation dimension: daily, weekly, monthly",
+                        "name": "dimension",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "30d",
+                        "description": "Time period: 7d, 30d, 90d, 1y",
+                        "name": "period",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/handlers.AssetStatisticsItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -1322,7 +1373,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handlers.AssetsSummary"
+                                            "$ref": "#/definitions/handlers.AssetsSummaryResponse"
                                         }
                                     }
                                 }
@@ -2532,7 +2583,70 @@
                 }
             }
         },
+        "handlers.AssetHistoryResponse": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number"
+                    }
+                },
+                "date": {
+                    "type": "string"
+                },
+                "net_assets": {
+                    "type": "number"
+                },
+                "total_assets": {
+                    "type": "number"
+                },
+                "total_debt": {
+                    "type": "number"
+                }
+            }
+        },
+        "handlers.AssetStatisticsItem": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "net_assets": {
+                    "type": "number"
+                },
+                "profit": {
+                    "type": "number"
+                },
+                "profit_rate": {
+                    "type": "number"
+                },
+                "total_assets": {
+                    "type": "number"
+                }
+            }
+        },
         "handlers.AssetsSummary": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number"
+                    }
+                },
+                "net_assets": {
+                    "type": "number"
+                },
+                "total_assets": {
+                    "type": "number"
+                },
+                "total_debt": {
+                    "type": "number"
+                }
+            }
+        },
+        "handlers.AssetsSummaryResponse": {
             "type": "object",
             "properties": {
                 "categories": {

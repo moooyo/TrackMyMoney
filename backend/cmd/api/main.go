@@ -228,6 +228,7 @@ func setupRoutes(r *gin.Engine, cfg *config.Config) {
 			// Summary and history
 			assets.GET("/summary", handlers.GetAssetsSummary)
 			assets.GET("/history", handlers.GetAssetsHistory)
+			assets.GET("/statistics", handlers.GetAssetsStatistics)
 		}
 
 		// Market routes

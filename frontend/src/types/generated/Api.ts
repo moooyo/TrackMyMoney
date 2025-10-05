@@ -32,7 +32,30 @@ export interface HandlersAssetHistory {
   total_debt?: number;
 }
 
+export interface HandlersAssetHistoryResponse {
+  categories?: Record<string, number>;
+  date?: string;
+  net_assets?: number;
+  total_assets?: number;
+  total_debt?: number;
+}
+
+export interface HandlersAssetStatisticsItem {
+  date?: string;
+  net_assets?: number;
+  profit?: number;
+  profit_rate?: number;
+  total_assets?: number;
+}
+
 export interface HandlersAssetsSummary {
+  categories?: Record<string, number>;
+  net_assets?: number;
+  total_assets?: number;
+  total_debt?: number;
+}
+
+export interface HandlersAssetsSummaryResponse {
   categories?: Record<string, number>;
   net_assets?: number;
   total_assets?: number;
@@ -1122,7 +1145,7 @@ export class Api<
     ) =>
       this.request<
         ResponseResponse & {
-          data?: HandlersAssetHistory[];
+          data?: HandlersAssetHistoryResponse[];
         },
         any
       >({
@@ -1240,6 +1263,42 @@ export class Api<
       this.request<ResponseResponse, any>({
         path: `/api/assets/interest-bearing/${id}`,
         method: "DELETE",
+        ...params,
+      }),
+
+    /**
+     * @description Get assets statistics aggregated by dimension (daily/weekly/monthly)
+     *
+     * @tags assets
+     * @name AssetsStatisticsList
+     * @summary Get assets statistics
+     * @request GET:/api/assets/statistics
+     */
+    assetsStatisticsList: (
+      query?: {
+        /**
+         * Aggregation dimension: daily, weekly, monthly
+         * @default "daily"
+         */
+        dimension?: string;
+        /**
+         * Time period: 7d, 30d, 90d, 1y
+         * @default "30d"
+         */
+        period?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        ResponseResponse & {
+          data?: HandlersAssetStatisticsItem[];
+        },
+        any
+      >({
+        path: `/api/assets/statistics`,
+        method: "GET",
+        query: query,
+        format: "json",
         ...params,
       }),
 
@@ -1385,7 +1444,7 @@ export class Api<
     assetsSummaryList: (params: RequestParams = {}) =>
       this.request<
         ResponseResponse & {
-          data?: HandlersAssetsSummary;
+          data?: HandlersAssetsSummaryResponse;
         },
         any
       >({

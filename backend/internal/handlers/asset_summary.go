@@ -99,3 +99,52 @@ func GetAssetsHistory(c *gin.Context) {
 
 	response.Success(c, history)
 }
+
+type AssetStatisticsItem struct {
+	Date        string  `json:"date"`
+	TotalAssets float64 `json:"total_assets"`
+	Profit      float64 `json:"profit"`
+	ProfitRate  float64 `json:"profit_rate"`
+	NetAssets   float64 `json:"net_assets"`
+}
+
+// GetAssetsStatistics gets asset statistics aggregated by dimension
+// @Summary Get assets statistics
+// @Description Get assets statistics aggregated by dimension (daily/weekly/monthly)
+// @Tags assets
+// @Produce json
+// @Param dimension query string false "Aggregation dimension: daily, weekly, monthly" default(daily)
+// @Param period query string false "Time period: 7d, 30d, 90d, 1y" default(30d)
+// @Success 200 {object} response.Response{data=[]AssetStatisticsItem}
+// @Router /api/assets/statistics [get]
+func GetAssetsStatistics(c *gin.Context) {
+	if globalAssetService == nil {
+		logger.Error("AssetService not initialized")
+		response.InternalError(c, "Service not available")
+		return
+	}
+
+	dimension := c.DefaultQuery("dimension", "daily")
+	period := c.DefaultQuery("period", "30d")
+
+	statisticsData, err := globalAssetService.GetAssetStatistics(dimension, period)
+	if err != nil {
+		logger.Error("Failed to retrieve asset statistics", zap.Error(err))
+		response.InternalError(c, "Failed to retrieve asset statistics")
+		return
+	}
+
+	// Convert to response format
+	var statistics []AssetStatisticsItem
+	for _, item := range statisticsData {
+		statistics = append(statistics, AssetStatisticsItem{
+			Date:        item.Date,
+			TotalAssets: item.TotalAssets,
+			Profit:      item.Profit,
+			ProfitRate:  item.ProfitRate,
+			NetAssets:   item.NetAssets,
+		})
+	}
+
+	response.Success(c, statistics)
+}

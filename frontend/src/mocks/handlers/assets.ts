@@ -117,4 +117,97 @@ export const assetsHandlers = [
       data: history,
     });
   }),
+
+  // Get assets statistics
+  http.get('/api/assets/statistics', ({ request }) => {
+    const url = new URL(request.url);
+    const dimension = url.searchParams.get('dimension') || 'daily';
+    const period = url.searchParams.get('period') || '30d';
+
+    // Calculate current total assets
+    let currentTotalAssets = 0;
+    let currentTotalDebt = 0;
+
+    mockCashAssets.forEach((asset) => {
+      currentTotalAssets += asset.amount || 0;
+    });
+    mockInterestBearingAssets.forEach((asset) => {
+      currentTotalAssets += asset.amount || 0;
+    });
+    mockStockAssets.forEach((asset) => {
+      currentTotalAssets +=
+        (asset.quantity || 0) * (asset.current_price || asset.purchase_price || 0);
+    });
+    mockCryptoAssets.forEach((asset) => {
+      currentTotalAssets +=
+        (asset.quantity || 0) * (asset.current_price || asset.purchase_price || 0);
+    });
+    mockDebtAssets.forEach((asset) => {
+      currentTotalDebt += asset.amount || 0;
+    });
+
+    // Determine data points based on dimension and period
+    let dataPoints = 0;
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : period === '1y' ? 365 : 30;
+
+    if (dimension === 'daily') {
+      dataPoints = days;
+    } else if (dimension === 'weekly') {
+      dataPoints = Math.ceil(days / 7);
+    } else if (dimension === 'monthly') {
+      dataPoints = Math.ceil(days / 30);
+    }
+
+    const statistics = [];
+    const now = new Date();
+
+    for (let i = dataPoints; i >= 0; i--) {
+      const date = new Date(now);
+      let dateStr = '';
+
+      if (dimension === 'daily') {
+        date.setDate(date.getDate() - i);
+        dateStr = date.toISOString().split('T')[0];
+      } else if (dimension === 'weekly') {
+        date.setDate(date.getDate() - i * 7);
+        // Get Monday of the week
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+        date.setDate(diff);
+        dateStr = date.toISOString().split('T')[0];
+      } else if (dimension === 'monthly') {
+        date.setMonth(date.getMonth() - i);
+        dateStr = date.toISOString().substring(0, 7); // YYYY-MM
+      }
+
+      // Simulate growth trend with some variation
+      const baseGrowth = 1 + (dataPoints - i) * 0.002; // 0.2% growth per period
+      const variation = (Math.random() - 0.5) * 0.05; // ±2.5% variation
+      const totalAssets = currentTotalAssets * baseGrowth * (1 + variation);
+      const netAssets = totalAssets - currentTotalDebt;
+
+      // Calculate profit compared to previous period
+      let profit = 0;
+      let profitRate = 0;
+      if (statistics.length > 0) {
+        const prevAssets = statistics[statistics.length - 1].total_assets;
+        profit = totalAssets - prevAssets;
+        profitRate = prevAssets > 0 ? (profit / prevAssets) * 100 : 0;
+      }
+
+      statistics.push({
+        date: dateStr,
+        total_assets: totalAssets,
+        profit: profit,
+        profit_rate: profitRate,
+        net_assets: netAssets,
+      });
+    }
+
+    return HttpResponse.json({
+      code: 0,
+      message: 'success',
+      data: statistics,
+    });
+  }),
 ];
